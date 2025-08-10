@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+# 概要
+
+- terraform で google cloud のテストをします
