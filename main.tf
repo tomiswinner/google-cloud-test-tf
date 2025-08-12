@@ -1,4 +1,9 @@
 
+
+locals {
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+}
+
 # Cloud Storage
 resource "google_storage_bucket" "static-website" {
   name = "${var.rsc_prefix}-bucket"
@@ -26,6 +31,7 @@ resource "google_storage_bucket_object" "index_html" {
   content_type = "text/html"
 }
 
+# 対象の bucket の role に対してメンバーを追加
 resource "google_storage_bucket_iam_member" "public_access" {
   bucket = google_storage_bucket.static-website.name
   role = "roles/storage.objectViewer"
