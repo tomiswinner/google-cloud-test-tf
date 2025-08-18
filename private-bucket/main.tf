@@ -11,5 +11,5 @@ module "load-balancer" {
   region = var.region
   load_balancing_scheme = "INTERNAL_MANAGED"
   backend_bucket_name = module.frontend.bucket_name
-  backend_service_name = module.frontend.backend_service_name
+  backend_service_name = module.backend.service_name
 }

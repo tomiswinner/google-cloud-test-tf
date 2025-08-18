@@ -18,7 +18,9 @@ variable "backend_bucket_name" {
   description = "Backend bucket name"
 }
 
+# TODO: optional にして　backend を設定しないケースを作りたいが、だいぶ面倒くさそうなので割愛
 variable "backend_service_name" {
   type = string
+  # default = null
   description = "Backend service name"
 }
