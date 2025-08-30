@@ -1,0 +1,12 @@
+main:
+  steps:
+    - publish_to_pubsub:
+        call: googleapis.pubsub.v1.projects.topics.publish
+        args:
+          topic: ${TOPIC_FULL_PATH}
+          body:
+            messages:
+              - data: ${base64encode("hogehoge")}
+        result: publish_result
+    - return_result:
+        return: $${publish_result}
