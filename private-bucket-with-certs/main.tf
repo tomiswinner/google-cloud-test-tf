@@ -145,16 +145,18 @@ resource "google_compute_global_address" "lb_ip" {
   depends_on = [google_compute_url_map.urlmap]
 }
 
-resource "google_compute_target_http_proxy" "proxy" {
+resource "google_compute_target_https_proxy" "proxy" {
   name    = "${var.rsc_prefix}-thp-gcs-${google_storage_bucket.private.name}"
   url_map = google_compute_url_map.urlmap.id
+  ssl_certificates = [ google_compute_managed_ssl_certificate.certificate.id ]
+  
 }
 
 resource "google_compute_global_forwarding_rule" "http_fr" {
   name                  = "${var.rsc_prefix}-fr-http-gcs-${google_storage_bucket.private.name}"
   ip_address            = google_compute_global_address.lb_ip.address
   port_range            = "80"
-  target                = google_compute_target_http_proxy.proxy.id
+  target                = google_compute_target_https_proxy.proxy.id
   load_balancing_scheme = local.load_balancing_scheme
 }
 
@@ -193,4 +195,33 @@ resource "null_resource" "patch_backend_service_sigv4" {
 
 output "lb_ip" {
   value = google_compute_global_address.lb_ip.address
+}
+
+# -----------------------------
+# Custom Domain
+# -----------------------------
+
+# 自動で certificate manager で管理される
+## google_certificate_manager_certificate は、よりリッチな機能を使うための証明書
+## google_compute_managed_ssl_certificate は LB などに使える証明書で、基本はこっちでいいはず
+### 実体が作成されると、デプロイ完了となるが DNS 認証とかが完了しないと使えない : https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_managed_ssl_certificate
+resource "google_compute_managed_ssl_certificate" "certificate" {
+  name = "${var.rsc_prefix}-cert-gcs-${google_storage_bucket.private.name}"
+  managed {
+    domains = ["hogehoge.test.mmmcorp.co.jp"]
+  }
+}
+
+# Cloud DNS : https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone
+resource "google_dns_managed_zone" "dns_zone" {
+  name = "hogehoge-test"
+  dns_name = "hogehoge.test.mmmcorp.co.jp."
+  visibility = "public"
+}
+resource "google_dns_record_set" "lb_a_record" {
+  name = "hogehoge.test.mmmcorp.co.jp."
+  type = "A"
+  ttl = 30
+  managed_zone = google_dns_managed_zone.dns_zone.name
+  rrdatas = [google_compute_global_address.lb_ip.address] # rr = Resource Record : 種類に応じた DNS record に格納する値、A なら ip address
 }
