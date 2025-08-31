@@ -1,0 +1,29 @@
+      set -euo pipefail
+      PROJECT="${PROJECT}"
+      REGION="${REGION}"
+      INTEGRATION_ID="${INTEGRATION_ID}"
+      FILE="${FILE}"
+      TOKEN="${TOKEN}"
+      BASE="https://integrations.googleapis.com/v1/projects/$${PROJECT}/locations/$${REGION}"
+      TOKEN="$$(gcloud auth print-access-token)"
+
+      # 存在チェック
+      if curl -sf -H "Authorization: Bearer $${TOKEN}" \
+           "$${BASE}/integrations/$${INTEGRATION_ID}" > /dev/null; then
+        echo "Updating integration $${INTEGRATION_ID}"
+        # content だけ更新する例（必要に応じて updateMask を調整）
+        curl -sS -X PATCH \
+          -H "Authorization: Bearer $${TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d @"$${FILE}" \
+          "$${BASE}/integrations/$${INTEGRATION_ID}?updateMask=content" \
+          | jq -r '.name // .'
+      else
+        echo "Creating integration $${INTEGRATION_ID}"
+        curl -sS -X POST \
+          -H "Authorization: Bearer $${TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d @"$${FILE}" \
+          "$${BASE}/integrations?integrationId=$${INTEGRATION_ID}" \
+          | jq -r '.name // .'
+      fi

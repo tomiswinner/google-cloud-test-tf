@@ -39,6 +39,36 @@ resource "google_service_account" "workflow_service_account" {
 }
 
 
+# 以下の Application Integration は Terraform に対応していないので手動で作ること
+# Application Integration 
+# Project
+#  └─ Integrations Client (google_integrations_client)   ← このプロジェクト/リージョンで AI を使う入口
+#       └─ Integration (google_integrations_integration) ← 具体的なフロー定義（JSON）
+#       └─ Auth Config (google_integrations_auth_config) ← 外部サービスに出ていくときの認証情報
+#       └─ Integration Connectors Connection             ← SaaS/DB へのコネクション（API接続口）
+# Terraform では Integration Client と Auth Config しか現状サポートされていない
+
+# resource "google_integrations_client" "mail_client" {
+#   location = var.region
+# }
 
 
+# resource "null_resource" "apply_integration_via_rest" {
+#   triggers = {
+#     sha = local.integration_content
+#   }
 
+#   depends_on = [
+#     google_integrations_client.client,
+#     local_file.integration_json,
+#   ]
+
+#   provisioner "local-exec" {
+#     command = "${templatefile("${path.module}/appIntegraton.sh.tftpl", {
+#       PROJECT = var.project_id
+#       REGION = var.region
+#       INTEGRATION_ID = "pubsub-trigger-flow"
+#       FILE = local_file.integration_json.filename
+#     })}"
+#   }
+# }
