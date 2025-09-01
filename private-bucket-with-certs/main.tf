@@ -1,7 +1,23 @@
 locals {
   load_balancing_scheme = "EXTERNAL_MANAGED"
   exectutor-id = "1234"
+  # MIMEタイプのマッピング
+  mime_types = {
+    ".html" = "text/html"
+    ".css"  = "text/css"
+    ".js"   = "application/javascript"
+    ".json" = "application/json"
+    ".png"  = "image/png"
+    ".jpg"  = "image/jpeg"
+    ".jpeg" = "image/jpeg"
+    ".gif"  = "image/gif"
+    ".svg"  = "image/svg+xml"
+    ".ico"  = "image/x-icon"
+    ".woff" = "font/woff"
+    ".woff2" = "font/woff2"
+  }
 }
+
 # -----------------------------
 # Cloud Storage: private bucket
 # -----------------------------
@@ -20,11 +36,14 @@ resource "google_storage_bucket" "private" {
   # default_event_based_hold = false
 }
 
-resource "google_storage_bucket_object" "index_html" {
-  name = "index.html"
+# outディレクトリ全体をアップロード
+resource "google_storage_bucket_object" "static_files" {
+  for_each = fileset("${path.module}/../nextjs-sample-site/out", "**/*")
+  
+  name = each.value
   bucket = google_storage_bucket.private.name
-  source = "./index.html"
-  content_type = "text/html"
+  source = "${path.module}/../nextjs-sample-site/out/${each.value}"
+  content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), "application/octet-stream")
 }
 
 # SA を作成し、Object Viewer を付与（最小権限）
@@ -101,6 +120,12 @@ resource "google_compute_backend_service" "gcs_bs" {
 # URL Map: Host ヘッダ付与 & Cookie 削除
 # -----------------------------
 
+# route_rule と path_rule がある
+## path_rule はシンプルなルーティングをする場合に使う
+## route_rule は複雑なルーティングをする場合に使う, classic ではサポートされてないらしい, External LB = Classic てのがややこしい
+## https://discuss.google.dev/t/what-is-the-difference-between-routerules-and-pathrules-in-a-url-map/164115/
+
+# TODO: ルーティングは　Next に特化されてないが、動的にコンテンツが増えるようなケース（動的パス）では SSG はまず使われない(際デプロイが必要になっちゃうので)
 resource "google_compute_url_map" "urlmap" {
   name            = "${var.rsc_prefix}-umap-gcs-${google_storage_bucket.private.name}"
   default_service = google_compute_backend_service.gcs_bs.id
@@ -120,10 +145,6 @@ resource "google_compute_url_map" "urlmap" {
     name = "${var.rsc_prefix}-path-matcher"
     default_service = google_compute_backend_service.gcs_bs.id
 
-    # route_rule と path_rule がある
-    ## path_rule はシンプルなルーティングをする場合に使う
-    ## route_rule は複雑なルーティングをする場合に使う, classic ではサポートされてないらしい, External LB = Classic てのがややこしい
-    ## https://discuss.google.dev/t/what-is-the-difference-between-routerules-and-pathrules-in-a-url-map/164115/
     path_rule {
       paths = ["/*"]
       service = google_compute_backend_service.gcs_bs.id
