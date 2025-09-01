@@ -46,3 +46,11 @@ npx http-server out
 
 - path で route を管理する
 - [slug] で動的パスが使える
+
+## Link について
+
+- next では<a></a>は非推奨（ブラウザのフルロードが走るので）
+- Link コンポーネントを利用する(こうすると、next/router が動いてくれる)
+
+### 内部ルーター
+
