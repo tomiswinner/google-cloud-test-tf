@@ -18,3 +18,4 @@ variable "rsc_prefix" {
   type = string
   default = "taktak-static"
 }
+
