@@ -5,7 +5,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.104.1" />
-  </ItemGroup>
 </Project>

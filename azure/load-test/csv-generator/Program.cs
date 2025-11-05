@@ -1,6 +1,6 @@
 using System.Globalization;
+using System.IO;
 using System.Text.Json;
-using ClosedXML.Excel;
 
 namespace CsvGenerator;
 
@@ -58,10 +58,10 @@ class Program
         // 日付をyyyyMMdd形式に変換
         string yyyyMMdd = date.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
 
-        // ファイル名に.xlsx拡張子が含まれていない場合は自動付与
-        if (!outputFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+        // ファイル名に.csv拡張子が含まれていない場合は自動付与
+        if (!outputFileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
         {
-            outputFileName += ".xlsx";
+            outputFileName += ".csv";
         }
 
         // データ生成
@@ -116,27 +116,36 @@ class Program
             dataList.Add(data);
         }
 
-        // Excelファイルに出力
-        var options = new JsonSerializerOptions
+        // JSONシリアライズオプション
+        var jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = false
         };
 
-        using (var workbook = new XLWorkbook())
+        // CSVファイルに出力（A列にJSON文字列を1行ずつ）
+        using (var writer = new StreamWriter(outputFileName))
         {
-            var worksheet = workbook.Worksheets.Add("Sheet1");
-            
-            int row = 1;
             foreach (var data in dataList)
             {
-                string json = JsonSerializer.Serialize(data, options);
-                worksheet.Cell(row, 1).Value = json;
-                row++;
+                // SlipDataをJSON文字列にシリアライズ
+                string json = JsonSerializer.Serialize(data, jsonOptions);
+                
+                // CSVエスケープ処理（内部のダブルクォートを""でエスケープ、全体をダブルクォートで囲む）
+                string escapedJson = EscapeCsvField(json);
+                
+                writer.WriteLine(escapedJson);
             }
-            
-            workbook.SaveAs(outputFileName);
         }
 
-        Console.WriteLine($"Excelファイル '{outputFileName}' を出力しました。");
+        Console.WriteLine($"CSVファイル '{outputFileName}' を出力しました。");
+    }
+
+    // CSVフィールドのエスケープ処理（内部のダブルクォートを""でエスケープ、全体をダブルクォートで囲む）
+    static string EscapeCsvField(string field)
+    {
+        // ダブルクォートを2つのダブルクォートにエスケープ
+        string escaped = field.Replace("\"", "\"\"");
+        // 全体をダブルクォートで囲む
+        return $"\"{escaped}\"";
     }
 }
