@@ -10,10 +10,15 @@ resource "azurerm_resource_group" "main" {
 }
 
 # Azure Load Testing Service
-resource "azurerm_load_test_service" "main" {
+resource "azurerm_load_test" "main" {
   name                = "${var.pj_name}-loadtest"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
+  description         = "Azure Load Testing resource for ${var.pj_name}"
+
+  identity {
+    type = "SystemAssigned"
+  }
 
   tags = {
     Project    = var.pj_name

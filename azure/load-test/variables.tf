@@ -1,7 +1,7 @@
 variable "pj_name" {
   description = "Name of the project"
   type        = string
-  default     = "taktaktaktf"
+  default     = "taktaktakalt"
 }
 
 variable "location" {
