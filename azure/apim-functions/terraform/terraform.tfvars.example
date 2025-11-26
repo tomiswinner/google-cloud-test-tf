@@ -1,0 +1,13 @@
+resource_group_name   = "az-di-rg-if-catalog-test"
+location              = "japaneast"
+function_app_name     = "az-di-dev-jpe-func-taktest-002-single-get"
+storage_account_name  = "azdidevjpefunctaktest002" # Must be globally unique, lowercase, alphanumeric only
+app_service_plan_name = "az-di-dev-jpe-asp-taktest-002"
+dotnet_version        = "v8.0"
+zip_deploy_file       = "../helloWorld.zip"  # Optional: Path to ZIP file for deployment
+
+tags = {
+  environment = "dev"
+  project     = "terraform-test"
+}
+
