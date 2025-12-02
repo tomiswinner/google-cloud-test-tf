@@ -25,16 +25,37 @@ variable "app" {
   type = string
   default = "./helloWorld.zip"
 }
+
+# Azure Storage Account からソースファイルをダウンロード（オプション）
+data "external" "download_from_storage" {
+  count = var.source_storage_account_name != "" && var.source_container_name != "" && var.source_blob_name != "" ? 1 : 0
+
+  program = ["bash", "${path.module}/scripts/download_blob.sh"]
+
+  query = {
+    storage_account = var.source_storage_account_name
+    container       = var.source_container_name
+    blob            = var.source_blob_name
+    output_dir      = "${path.root}/.terraform/downloaded"
+  }
+}
+
+# ソースファイルのパス（リモートからダウンロードした場合とローカルの場合）
+locals {
+  source_file = var.source_storage_account_name != "" && var.source_container_name != "" && var.source_blob_name != "" ? data.external.download_from_storage[0].result.file_path : var.app
+}
+
 data "archive_file" "app_hash" {
   # This just exists to get the hash of the app.zip file.
   type        = "zip"
-  source_file  = var.app
-  output_path = "${path.module}/.terraform/archive_files/app.zip"
+  source_file = local.source_file
+  output_path = "${path.root}/.terraform/archive_files/app.zip"
 }
+
 data "archive_file" "app" {
   type        = "zip"
-  source_file  = var.app
-  output_path = "${path.module}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
+  source_file = local.source_file
+  output_path = "${path.root}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
 }
 
 

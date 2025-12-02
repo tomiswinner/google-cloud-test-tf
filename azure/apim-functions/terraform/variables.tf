@@ -47,3 +47,21 @@ variable "tags" {
   default     = {}
 }
 
+variable "source_storage_account_name" {
+  description = "Name of the storage account where source file is stored (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "source_container_name" {
+  description = "Container name in source storage account (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "source_blob_name" {
+  description = "Blob name (file name) in source storage account (optional)"
+  type        = string
+  default     = ""
+}
+
