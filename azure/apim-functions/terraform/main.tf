@@ -26,38 +26,55 @@ variable "app" {
   default = "./helloWorld.zip"
 }
 
-# Azure Storage Account からソースファイルをダウンロード（オプション）
-data "external" "download_from_storage" {
-  count = var.source_storage_account_name != "" && var.source_container_name != "" && var.source_blob_name != "" ? 1 : 0
+# # Azure Storage Account からソースファイルをダウンロード（オプション）
+# data "external" "download_from_storage" {
+#   count = var.source_storage_account_name != "" && var.source_container_name != "" && var.source_blob_name != "" ? 1 : 0
 
-  program = ["bash", "${path.module}/scripts/download_blob.sh"]
+#   program = ["bash", "${path.module}/scripts/download_blob.sh"]
 
-  query = {
-    storage_account = var.source_storage_account_name
-    container       = var.source_container_name
-    blob            = var.source_blob_name
-    output_dir      = "${path.root}/.terraform/downloaded"
-  }
-}
+#   query = {
+#     storage_account = var.source_storage_account_name
+#     container       = var.source_container_name
+#     blob            = var.source_blob_name
+#     output_dir      = "${path.root}/.terraform/downloaded"
+#   }
+# }
 
-# ソースファイルのパス（リモートからダウンロードした場合とローカルの場合）
-locals {
-  source_file = var.source_storage_account_name != "" && var.source_container_name != "" && var.source_blob_name != "" ? data.external.download_from_storage[0].result.file_path : var.app
-}
+# # ソースファイルのパス（リモートからダウンロードした場合とローカルの場合）
+# locals {
+#   source_file = var.source_storage_account_name != "" && var.source_container_name != "" && var.source_blob_name != "" ? data.external.download_from_storage[0].result.file_path : var.app
+# }
 
 data "archive_file" "app_hash" {
   # This just exists to get the hash of the app.zip file.
   type        = "zip"
-  source_file = local.source_file
+  source_file = var.app
   output_path = "${path.root}/.terraform/archive_files/app.zip"
 }
 
-data "archive_file" "app" {
-  type        = "zip"
-  source_file = local.source_file
-  output_path = "${path.root}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
-}
+# data "archive_file" "app" {
+#   type        = "zip"
+#   source_file = var.app
+#   output_path = "${path.root}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
+# }
 
+resource "terraform_data" "app" {
+  triggers_replace = [
+    data.archive_file.app_hash.output_sha256
+  ]
+  provisioner "local-exec" {
+    command = "cp ${var.app} ${path.root}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
+  }
+}
+# null resource はもう使われないので、terraform_data を使う
+# resource "null_resource" "app" {
+#   triggers = {
+#     app_hash = data.archive_file.app_hash.output_sha256
+#   }
+#   provisioner "local-exec" {
+#     command = "cp ${var.app} ${path.root}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
+#   }
+# }
 
 
 # Resource Group
@@ -89,7 +106,7 @@ resource "azurerm_service_plan" "main" {
 
 # Function App (Windows, .NET)
 resource "azurerm_windows_function_app" "main" {
-  name                = var.function_app_name
+  name                = "${var.function_app_name}-yo"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   service_plan_id     = azurerm_service_plan.main.id
@@ -104,8 +121,14 @@ resource "azurerm_windows_function_app" "main" {
     }
   }
 
-  zip_deploy_file = data.archive_file.app.output_path
+  app_settings = {
+    WEBSITE_RUN_FROM_PACKAGE = "1"
+  }
+
+  zip_deploy_file = "${path.root}/.terraform/archive_files/app-${data.archive_file.app_hash.output_sha256}.zip"
+  # zip_deploy_file = data.archive_file.app.output_path
 
   tags = var.tags
+  depends_on = [terraform_data.app]
 }
 

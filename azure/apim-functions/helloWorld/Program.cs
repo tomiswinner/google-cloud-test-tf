@@ -19,7 +19,7 @@ public class HelloWorldFunction
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "application/json; charset=utf-8");
         
-        var result = new { message = "Hello!!" };
+        var result = new { message = "Hiwwwwwiii!!" };
         var json = JsonSerializer.Serialize(result);
         response.WriteString(json);
         
