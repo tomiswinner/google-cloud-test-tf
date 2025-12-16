@@ -33,6 +33,17 @@ resource "azurerm_storage_container" "output" {
 #   id = "/subscriptions/fcf6dedb-c06b-41f1-8344-1c008ca4b872/resourceGroups/rg-adf-test/providers/Microsoft.Storage/storageAccounts/taktaktaktaktest22"
 # }
 
+# import module test
+import {
+  to = module.hello.azurerm_storage_account.target
+  id = "/subscriptions/fcf6dedb-c06b-41f1-8344-1c008ca4b872/resourceGroups/rg-adf-test/providers/Microsoft.Storage/storageAccounts/taktaktaktaktest22"
+}
+
+
+# hello module
+module "hello" {
+  source = "./modules/hello_world"
+}
 
 
 # resource "azurerm_storage_account" "target" {

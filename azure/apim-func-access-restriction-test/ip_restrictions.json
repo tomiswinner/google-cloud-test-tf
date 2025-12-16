@@ -1,0 +1,17 @@
+[
+  {
+    "name": "AllowAPIM",
+    "service_tag": "ApiManagement",
+    "ip_address": null,
+    "priority": 100,
+    "action": "Allow"
+  },
+  {
+    "name": "DenyAll",
+    "service_tag": null,
+    "ip_address": "0.0.0.0/0",
+    "priority": 200,
+    "action": "Deny"
+  }
+]
+
