@@ -13,7 +13,7 @@ variable "location" {
 variable "apim_name" {
   description = "Name of the API Management instance"
   type        = string
-  default     = "apim-func-test"
+  default     = "apim-func-test22"
 }
 
 variable "function_app_name" {
